@@ -155,6 +155,14 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	private Comparator<Object> dependencyComparator;
 
 	/** Resolver to use for checking if a bean definition is an autowire candidate. */
+
+	// 默认的SimpleAutowireCandiateResolver 没有提供什么功能，不建议直接用
+	// GenericTypeAwareAutowireCandidateResolver 支持了泛型依赖注入功能
+	// QualifierAnnotationAutowireCandidateResolver 支持了@Qualifier，@Value
+	// ContextAnnotationAutowireCandidateResolver, AutowireCandidateResolver的完整实现，支持了@Lazy懒处理
+	// 将autowireCandidateResolver设置为ContextAnnotationAutowireCandidateResolver，是在
+	// AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry)中进行的
+	// https://blog.csdn.net/f641385712/article/details/93620967
 	private AutowireCandidateResolver autowireCandidateResolver = SimpleAutowireCandidateResolver.INSTANCE;
 
 	/** Map from dependency type to corresponding autowired value. */
@@ -872,8 +880,10 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 		// Trigger initialization of all non-lazy singleton beans...
 		for (String beanName : beanNames) {
+			// getMergedLocalBeanDefinition, 遍历beanName对应的bean的父类，然后合并自己及其父类的BeanDefinition信息
 			RootBeanDefinition bd = getMergedLocalBeanDefinition(beanName);
 			if (!bd.isAbstract() && bd.isSingleton() && !bd.isLazyInit()) {
+				// 如果是factoryBean，要加载两个bean：&factoryBean，factoryBean
 				if (isFactoryBean(beanName)) {
 					Object bean = getBean(FACTORY_BEAN_PREFIX + beanName);
 					if (bean instanceof FactoryBean) {
@@ -1242,6 +1252,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			}
 
 			Class<?> type = descriptor.getDependencyType();
+			// 获取descriptor（可以对应一个字段，也可以对应一个方法）上或者其方法参数上的@Value注解的值
 			Object value = getAutowireCandidateResolver().getSuggestedValue(descriptor);
 			if (value != null) {
 				if (value instanceof String) {
@@ -1252,6 +1263,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				}
 				TypeConverter converter = (typeConverter != null ? typeConverter : getTypeConverter());
 				try {
+					// 即使是autowire byType，也有调用convertIfNecessary的必要。
+					// 因为涉及到@Value注解，@Value注解可以通过SPEL设置一个object，这个object可能不是requiredType
 					return converter.convertIfNecessary(value, type, descriptor.getTypeDescriptor());
 				}
 				catch (UnsupportedOperationException ex) {

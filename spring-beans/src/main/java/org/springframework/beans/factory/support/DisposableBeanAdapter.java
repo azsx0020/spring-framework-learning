@@ -108,6 +108,7 @@ class DisposableBeanAdapter implements DisposableBean, Runnable, Serializable {
 				(this.bean instanceof DisposableBean && !beanDefinition.isExternallyManagedDestroyMethod("destroy"));
 		this.nonPublicAccessAllowed = beanDefinition.isNonPublicAccessAllowed();
 		this.acc = acc;
+		// 如果bean的destroy method 为"(inferred)"，或者bean非disposable且实现了autoclosable，那么就尝试寻找public的无参数的close或shutdown作为destroy method
 		String destroyMethodName = inferDestroyMethodIfNecessary(bean, beanDefinition);
 		if (destroyMethodName != null && !(this.invokeDisposableBean && "destroy".equals(destroyMethodName)) &&
 				!beanDefinition.isExternallyManagedDestroyMethod(destroyMethodName)) {
@@ -135,6 +136,7 @@ class DisposableBeanAdapter implements DisposableBean, Runnable, Serializable {
 			}
 			this.destroyMethod = destroyMethod;
 		}
+		// 过滤出所有的DestructionAwareBeanPostProcessor
 		this.beanPostProcessors = filterPostProcessors(postProcessors, bean);
 	}
 

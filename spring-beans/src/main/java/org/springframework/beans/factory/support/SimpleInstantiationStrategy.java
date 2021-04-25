@@ -106,6 +106,7 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
 	public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner,
 			final Constructor<?> ctor, Object... args) {
 
+		// 没有methodOverrides，就用反射进行实例化
 		if (!bd.hasMethodOverrides()) {
 			if (System.getSecurityManager() != null) {
 				// use own privileged to change accessibility (when security is on)
@@ -116,6 +117,7 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
 			}
 			return BeanUtils.instantiateClass(ctor, args);
 		}
+		// 有methodOverrides，就用CGLib进行实例化
 		else {
 			return instantiateWithMethodInjection(bd, beanName, owner, ctor, args);
 		}

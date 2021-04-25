@@ -223,6 +223,8 @@ class BeanDefinitionValueResolver {
 			return null;
 		}
 		else {
+			// 如果上述所有if条件都不匹配，就直接调用evaluate方法来把value作为SPEL来解析
+			// 当然，如果value不是上述if条件中的任何类型，也不是String，也不是String[]，那么就什么都不做，直接return value
 			return evaluate(value);
 		}
 	}
